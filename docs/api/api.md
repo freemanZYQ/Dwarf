@@ -34,7 +34,7 @@ api.addWatcher(0xc4d8ff30);
 api.deleteHook(key);
 ```
 
-> Javascript api to remove an hook by key. Could be a pointer if the hook is native, a module if it's OnLoad or a string pointer or a string java class method etc
+> Remove an hook by key. Could be a pointer if the hook is native, a module if it's OnLoad or a string pointer or a string java class method etc
 
 ----
 
