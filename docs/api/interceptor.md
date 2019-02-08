@@ -29,7 +29,7 @@ Interceptor.attach(targetPtr, function() {
     api.setData('hit ' + n_hits, 'content');
     n_hits += 1;
 
-    // don't break or sleep
+    // don't break the thread
     return -1;
 });
 ```

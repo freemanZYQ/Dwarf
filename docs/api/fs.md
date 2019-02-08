@@ -30,8 +30,8 @@ fs class exposes functions from wrapped libc api, such as popen etc. and allows 
 
 ```javascript
 // real example from base library
-// both accept path and perm as string in params
-var f = fs.fopen(kernel.ftrace.PATH_TRACE, 'r');
+// both fopen/popen accept path and perm as string in params
+var f = fs.fopen('/path/to/my_file', 'r');
 var buf = fs.allocateRw(Process.pointerSize);
 var len = fs.allocateRw(Process.pointerSize);
 var read;
