@@ -40,7 +40,7 @@ Most of the effort has been spent into bringing compatibility for Windows, aka..
 
 ## Why you **should** give it a try:
 
-1. because I'm sure you could find one of the [features](./features.html) very useful for the reason that takes you here.
+1. because I'm sure you could find one of the [features](./docs/features.html) very useful for the reason that takes you here.
 2. it's open-source
 3. it's built on top of the best technologies in terms of reverse engineering [frida](http://frida.re), [capstone](http://www.capstone-engine.org/), 
 [keystone](http://www.keystone-engine.org/), [apktool](https://ibotpeaches.github.io/Apktool/), and so on
