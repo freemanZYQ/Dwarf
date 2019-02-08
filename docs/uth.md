@@ -19,6 +19,80 @@ Some of the features logic explained
 
 ---
 
+## Breakpoints
+
+##### core
+```javascript
+// there are several paths which the code can follow, mainly because of arguments provided to attach()
+// let's take the simple case to begin the understanding
+ 
+// hook is an object stored in dwarf to allow command execution inside the thread
+// it also store information about the target address
+hook.interceptor = wrappedInterceptor.attach(hook.nativePtr, function(args) {
+    // logic is the function provided as second argument in Interceptor.attach 
+    // eventually it is managed by dwarf is the object with onEnter/onLeave is provided
+    var result = logic.call(this, args);
+    // check if the return is an integer below 0. this will prevent the break.
+    if (typeof result === 'undefined' || (typeof result === 'number' && result >= 0)) {
+        // inside _onHook is where everything happens
+        // the thread will be paused allowing code execution and api injection in the specific thread context
+        getDwarf()._onHook(REASON_HOOK, hook.nativePtr, this.context, hook, null);
+    }
+});
+
+/**
+ * just a separator .P
+**/
+
+// relevant _onHook logic
+while (hc.hold_context) {
+    // next api hold a reference of the next api to be injected
+    if (hc.next_api !== null) {
+        // store the result of the api call
+        hc.next_api_result = api[hc.next_api[0]].apply(that, hc.next_api[1]);
+        // invalidate
+        hc.next_api = null;
+    }
+    // sleep this thread
+    Thread.sleep(1 / 100);
+}
+
+// injection happens through the unique rpc.export to communicate with dwarf script
+rpc.exports = {
+    api: function(tid, api_funct, args) {
+        // sanify args
+        if (typeof args === 'undefined' || args === null) {
+            args = [];
+        }
+
+        // check if the provided tid is actually hooked
+        // otherwise fallback an execute the command to the main thread
+        if (Object.keys(getDwarf().hook_contexts).length > 0) {
+            // retrieve hc (hook context)
+            var hc = getDwarf().hook_contexts[tid];
+            if (typeof hc !== 'undefined') {
+                // store data into hc that will be parsed from the sleeping thread
+                hc.next_api = [api_funct, args];
+                // wait for the result from the hooked thread
+                while (hc.next_api_result === 'dwarf_handler') {
+                    Thread.sleep(1 / 100);
+                }
+                // store the result
+                var ret = hc.next_api_result;
+                // invalidate hc stored result
+                hc.next_api_result = 'dwarf_handler';
+                // return
+                return ret;
+            }
+        }
+
+        // inject api in the main thread if tid is not provided/hooked
+        return api[api_funct].apply(this, args)
+    },
+};
+
+```
+
 ## Thread.new
 
 ##### prologue
