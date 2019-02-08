@@ -31,7 +31,7 @@ Some of the features logic explained
 // we use "wrappedInterceptor" which could be eventually used while scripting as a bridge to the real frida Interceptor
 hook.interceptor = wrappedInterceptor.attach(hook.nativePtr, function(args) {
     // logic is the function provided as second argument in Interceptor.attach 
-    // eventually it is managed by dwarf is the object with onEnter/onLeave is provided
+    // eventually dwarf manage if the object provided with onEnter/onLeave is provided
     var result = logic.call(this, args);
     // check if the return is an integer below 0. this will prevent the break.
     if (typeof result === 'undefined' || (typeof result === 'number' && result >= 0)) {
