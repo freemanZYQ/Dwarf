@@ -72,7 +72,7 @@ rpc.exports = {
         }
 
         // check if the provided tid is actually hooked
-        // otherwise fallback an execute the command to the main thread
+        // otherwise fallback and execute the command to the main thread
         if (Object.keys(getDwarf().hook_contexts).length > 0) {
             // retrieve hc (hook context)
             var hc = getDwarf().hook_contexts[tid];
