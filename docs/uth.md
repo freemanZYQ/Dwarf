@@ -99,9 +99,87 @@ rpc.exports = {
 
 ```
 
-## Thread.new
+----
+
+## Memory watchers
+
+> aka break the execution of the thread when a specific address got read or write
+
+```javascript
+
+// 1 adding the watcher
+this.addWatcher = function(nativePointer) {
+    ...
+    
+    // check if we already have a watcher at specified nativePointer
+    if (typeof getDwarf().memory_watchers[nativePointer] === 'undefined') {
+        // retrieve range for this address to get permissions
+        var range = Process.findRangeByAddress(nativePointer);
+        if (range === null) {
+            return;
+        }
+        // create the memory watcher object which store information about the target address
+        getDwarf().memory_watchers[nativePointer] = 
+            new MemoryWatcher(nativePointer, range.protection);
+        ...
+    }
+    
+    // watch the address
+    getDwarf().memory_watchers[pt].watch();
+};
+
+// 2 how it works
+this.watch = function() {
+    var perm = '---';
+    if (this.original_permissions.indexOf('x') >= 0) {
+        // allow execute
+        perm = '--x';
+    }
+    // patch permission to trigger a segfault when a read/write occurs
+    Memory.protect(this.address, 1, perm);
+};
+
+// 3 handle the exception
+Process.setExceptionHandler(getDwarf()._handleException);
+
+this._handleException = function(exception) {
+    var tid = Process.getCurrentThreadId();
+    var address = exception['address'];
+    var watcher = null;
+
+    // watchers
+    if (Object.keys(getDwarf().memory_watchers).length > 0) {
+        // make sure it's access violation
+        if (exception['type'] === 'access-violation') {
+            // restore original permission if we really hit a mem watcher
+            watcher = getDwarf().memory_watchers[exception['memory']['address']];
+            if (typeof watcher !== 'undefined') {
+                watcher.restore();
+            } else {
+                watcher = null;
+            }
+        }
+    }
+
+    if (watcher !== null) {
+        // hook the address of the instruction which triggered the crash
+        var hook = new Hook();
+        hook.nativePtr = address;
+        hook.interceptor = wrappedInterceptor.attach(address, function () {
+            getDwarf()._onHook(REASON_WATCHER, hook.nativePtr, this.context, hook, null);
+            watcher.watch();
+            hook.interceptor.detach();
+        });
+
+    }
+    return watcher !== null;
+};
+```
+
 
 ----
+
+## Thread.new
 
 ```javascript
 // attempt to retrieve pthread_create
