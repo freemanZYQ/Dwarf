@@ -4,11 +4,11 @@ title: Under the hoods
 nav_order: 6
 ---
 
-# Examples
+# Under the hoods
 {: .no_toc }
 
 
-Some Dwarf usage cases
+Some of the features logic explained
 {: .fs-6 .fw-300 }
 
 ## Table of contents
