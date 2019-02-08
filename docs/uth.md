@@ -157,5 +157,14 @@ this.new = function(fn) {
     // spawn the thread
     return Thread.pthread_create(pthread_t, ptr(0), Thread.handler, ptr(0));
 };
+
+
+// a simple test to see if it really works
+
+console.log(Process.getCurrentThreadId());
+Thread.new(function() {
+    console.log('hello from -> ' + Process.getCurrentThreadId());    
+});
+
 ```
 
