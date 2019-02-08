@@ -15,7 +15,7 @@ nav_order: 2
 * backtrace
 * breakpoints solib initializations (Android)
 * disassemble view with assembler patcher
-* emulator with steps and first operand highlight
+* emulator with steps, dynamic map ranges at needed from target and first operand highlight
 * export, import, symbols, ranges
 * hex view with bytes/string patcher, pointer jumps, quick breakpoints etc.
 * jvm explorer / java side debugging (Android)
