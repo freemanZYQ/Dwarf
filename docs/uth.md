@@ -107,7 +107,7 @@ rpc.exports = {
 
 ```javascript
 
-// 1 adding the watcher
+// 1 adding the watcher either through api.addWatcher or ui
 this.addWatcher = function(nativePointer) {
     ...
     
