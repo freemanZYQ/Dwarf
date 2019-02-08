@@ -160,7 +160,6 @@ this.new = function(fn) {
 
 
 // a simple test to see if it really works
-
 console.log(Process.getCurrentThreadId());
 Thread.new(function() {
     console.log('hello from -> ' + Process.getCurrentThreadId());    

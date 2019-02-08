@@ -26,7 +26,7 @@ Dwarf can debug on any operating system as a target and run on any desktop opera
 
 ---
 
-## Why you **shouldn't** use Dwarf.
+## Why you **shouldn't** use Dwarf:
 
 1. In the "reverse engineering" scene there are a lot of context in which a debugger could be used.
 All the features has been coded and tested on different scenarios and thanks to the community (and a lot of if else) it handle most of the cases, but not all of them.
