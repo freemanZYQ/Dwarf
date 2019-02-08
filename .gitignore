@@ -1,12 +1,1 @@
 .idea
-__pycache__
-frida
-.DS_Store
-dist
-build
-Dwarf.iml
-.shortcuts
-.dwarf
-.git_cache
-tools
-.decompile
