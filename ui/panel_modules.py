@@ -322,8 +322,7 @@ class ModulesPanel(QWidget):
             else:
                 self.imports_list.setVisible(False)
 
-        exports = self._app_window.dwarf.dwarf_api('enumerateExports',
-                                                   module.text())
+        exports = self._app_window.dwarf.dwarf_api('enumerateExports', module.text())
         if exports and exports is not None:
             exports = json.loads(exports)
             if exports:
@@ -332,8 +331,7 @@ class ModulesPanel(QWidget):
             else:
                 self.exports_list.setVisible(False)
 
-        symbols = self._app_window.dwarf.dwarf_api('enumerateSymbols',
-                                                   module.text())
+        symbols = self._app_window.dwarf.dwarf_api('enumerateSymbols', module.text())
         if symbols and symbols is not None:
             symbols = json.loads(symbols)
             if symbols:
@@ -379,18 +377,22 @@ class ModulesPanel(QWidget):
         context_menu = QMenu(self)
         if index != -1:
             context_menu.addAction(
-                'Dump Binary', lambda: self._on_dumpmodule(
+                'Dump binary', lambda: self._on_dump_module(
                     self.modules_model.item(index, 1).text(),
                     self.modules_model.item(index, 2).text()))
+            context_menu.addAction(
+                'List strings', lambda: self._on_list_strings(
+                    self.modules_model.item(index, 0).text()))
+            context_menu.addSeparator()
             context_menu.addAction(
                 'Copy address', lambda: utils.copy_hex_to_clipboard(
                     self.modules_model.item(index, 1).text()))
             context_menu.addSeparator()
             context_menu.addAction(
-                'Copy Name', lambda: utils.copy_str_to_clipboard(
+                'Copy name', lambda: utils.copy_str_to_clipboard(
                     self.modules_model.item(index, 0).text()))
             context_menu.addAction(
-                'Copy Path', lambda: utils.copy_str_to_clipboard(
+                'Copy path', lambda: utils.copy_str_to_clipboard(
                     self.modules_model.item(index, 3).text()))
             context_menu.addSeparator()
 
@@ -442,7 +444,7 @@ class ModulesPanel(QWidget):
                     func_name))
             context_menu.exec_(glbl_pt)
 
-    def _on_dumpmodule(self, ptr, size):
+    def _on_dump_module(self, ptr, size):
         """ MenuItem DumpBinary
         """
         if isinstance(ptr, int):
@@ -453,6 +455,9 @@ class ModulesPanel(QWidget):
 
         size = size.replace(',', '')
         self.onDumpBinary.emit([ptr, size])
+
+    def _on_list_strings(self, module_name):
+        strings = self._app_window.dwarf.dwarf_api('enumerateStrings', module_name)
 
     def _add_hook(self, ptr, name=None):
         """ MenuItem AddHook
