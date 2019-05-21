@@ -287,6 +287,7 @@ class WelcomeDialog(QDialog):
         btn.setIconSize(QSize(75, 75))
         btn.setIcon(ico)
         btn.setToolTip('New iOS Session')
+        btn.clicked.connect(self._on_ios_button)
         wrapper.addWidget(btn)
 
         btn = QPushButton()
@@ -369,6 +370,10 @@ class WelcomeDialog(QDialog):
 
     def _on_local_button(self):
         self.onSessionSelected.emit('Local')
+        self.close()
+
+    def _on_ios_button(self):
+        self.onSessionSelected.emit('Ios')
         self.close()
 
     def _on_remote_button(self):
