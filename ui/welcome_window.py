@@ -2,10 +2,10 @@ import os
 import random
 import json
 
-from PyQt5.QtCore import Qt, QSize, pyqtSignal, QThread, QRect
-from PyQt5.QtGui import QFont, QPixmap, QIcon, QStandardItemModel, QStandardItem, QPainter, QColor
-from PyQt5.QtWidgets import QWidget, QDialog, QLabel, QVBoxLayout, QHBoxLayout, \
-    QPushButton, QSpacerItem, QSizePolicy, QStyle, qApp, QHeaderView, QMenu
+from PyQt5.QtCore import Qt, QSize, QRect, pyqtSignal, QThread, QMargins
+from PyQt5.QtGui import QFont, QPixmap, QIcon, QStandardItemModel, QStandardItem
+from PyQt5.QtWidgets import QWidget, QListWidget, QListWidgetItem, QDialog, QLabel, QVBoxLayout, QHBoxLayout, \
+    QPushButton, QListView, QSpacerItem, QSizePolicy, QStyle, qApp, QHeaderView
 
 from lib import utils, prefs
 from lib.git import Git
@@ -130,7 +130,7 @@ class UpdateBar(QWidget):
 
         update_button = QPushButton('Update now!', update_label)
         update_button.setStyleSheet('padding: 0; border-color: white;')
-        update_button.setGeometry(update_label.width() + 50, 5, 155, 25)
+        update_button.setGeometry(update_label.width() + 50, 5, 100, 25)
         update_button.clicked.connect(self.update_now_clicked)
         h_box.addWidget(update_label)
         self.setLayout(h_box)
@@ -143,7 +143,6 @@ class UpdateBar(QWidget):
 
 class WelcomeDialog(QDialog):
     onSessionSelected = pyqtSignal(str, name='onSessionSelected')
-    onSessionRestore = pyqtSignal(dict, name='onSessionRestore')
     onUpdateComplete = pyqtSignal(name='onUpdateComplete')
     onIsNewerVersion = pyqtSignal(name='onIsNewerVersion')
 
@@ -160,7 +159,7 @@ class WelcomeDialog(QDialog):
             ['as fuck', 'fancy', 'fucked', 'front-ended', 'falafel', 'french fries'],
         ]
 
-        self._recent_list_model = QStandardItemModel(0, 6)
+        self._recent_list_model = QStandardItemModel(0, 7)
         self._recent_list_model.setHeaderData(0, Qt.Horizontal, 'Path')
         self._recent_list_model.setHeaderData(1, Qt.Horizontal, 'Session')
         self._recent_list_model.setHeaderData(1, Qt.Horizontal, Qt.AlignCenter, Qt.TextAlignmentRole)
@@ -172,10 +171,10 @@ class WelcomeDialog(QDialog):
         self._recent_list_model.setHeaderData(4, Qt.Horizontal, Qt.AlignCenter, Qt.TextAlignmentRole)
         self._recent_list_model.setHeaderData(5, Qt.Horizontal, 'Bookmarks')
         self._recent_list_model.setHeaderData(5, Qt.Horizontal, Qt.AlignCenter, Qt.TextAlignmentRole)
-        #self._recent_list_model.setHeaderData(6, Qt.Horizontal, 'Custom script')
-        #self._recent_list_model.setHeaderData(6, Qt.Horizontal, Qt.AlignCenter, Qt.TextAlignmentRole)
+        self._recent_list_model.setHeaderData(6, Qt.Horizontal, 'Custom script')
+        self._recent_list_model.setHeaderData(6, Qt.Horizontal, Qt.AlignCenter, Qt.TextAlignmentRole)
 
-        self._recent_list = DwarfListView(self)
+        self._recent_list = DwarfListView()
         self._recent_list.setModel(self._recent_list_model)
 
         self._recent_list.header().setSectionResizeMode(0, QHeaderView.ResizeToContents | QHeaderView.Interactive)
@@ -184,14 +183,18 @@ class WelcomeDialog(QDialog):
         self._recent_list.header().setSectionResizeMode(3, QHeaderView.Stretch)
         self._recent_list.header().setSectionResizeMode(4, QHeaderView.Stretch)
         self._recent_list.header().setSectionResizeMode(5, QHeaderView.Stretch)
-        #self._recent_list.header().setSectionResizeMode(6, QHeaderView.Stretch)
+        self._recent_list.header().setSectionResizeMode(6, QHeaderView.Stretch)
 
         self._recent_list.setContextMenuPolicy(Qt.CustomContextMenu)
         self._recent_list.customContextMenuRequested.connect(self._on_recent_sessions_context_menu)
-        self._recent_list.doubleClicked.connect(self._on_recent_session_double_click)
+
+        _section_width = self._recent_list.header().sectionSize(2)
+        self._new_pixmap = QPixmap(_section_width, 20)
+        self._new_pixmap.fill(Qt.transparent)
+        self._dot_icon = QIcon(self._new_pixmap)
 
         # setup size and remove/disable titlebuttons
-        self.setFixedSize(860, 420)
+        self.setFixedSize(800, 400)
         self.setSizeGripEnabled(False)
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
@@ -299,6 +302,7 @@ class WelcomeDialog(QDialog):
         btn.setIconSize(QSize(75, 75))
         btn.setIcon(ico)
         btn.setToolTip('New Remote Session')
+        btn.clicked.connect(self._on_remote_button)
         wrapper.addWidget(btn)
 
         session_history = self._prefs.get(prefs.RECENT_SESSIONS, default=[])
@@ -309,47 +313,32 @@ class WelcomeDialog(QDialog):
                     exported_session = json.load(f)
                 hooks = '0'
                 watchers = '0'
-                on_loads = 0
+                onLoads = '0'
                 bookmarks = '0'
                 have_user_script = False
                 if 'hooks' in exported_session and exported_session['hooks'] is not None:
                     hooks = str(len(exported_session['hooks']))
                 if 'watchers' in exported_session and exported_session['watchers'] is not None:
                     watchers = str(len(exported_session['watchers']))
-                if 'nativeOnLoads' in exported_session and exported_session['nativeOnLoads'] is not None:
-                    on_loads += len(exported_session['nativeOnLoads'])
-                if 'javaOnLoads' in exported_session and exported_session['javaOnLoads'] is not None:
-                    on_loads += len(exported_session['javaOnLoads'])
+                if 'onLoads' in exported_session and exported_session['onLoads'] is not None:
+                    onLoads = str(len(exported_session['onLoads']))
                 if 'bookmarks' in exported_session and exported_session['bookmarks'] is not None:
                     bookmarks = str(len(exported_session['bookmarks']))
                 if 'user_script' in exported_session and exported_session['user_script']:
                     have_user_script = exported_session['user_script'] != ''
 
-                #user_script_item = QStandardItem()
-                #if have_user_script:
-                #user_script_item.setIcon(self._dot_icon)
-
-                on_loads = str(on_loads)
-
-                recent_session_file_item = QStandardItem(recent_session_file)
-                recent_session_file_item.setData(exported_session, Qt.UserRole + 2)
-                
-                item_1 = QStandardItem(exported_session['session'])
-                item_1.setTextAlignment(Qt.AlignCenter)
-                item_2 = QStandardItem(hooks)
-                item_2.setTextAlignment(Qt.AlignCenter)
-                item_3 = QStandardItem(watchers)
-                item_3.setTextAlignment(Qt.AlignCenter)
-                item_4 = QStandardItem(on_loads)
-                item_4.setTextAlignment(Qt.AlignCenter)
-                item_5 = QStandardItem(bookmarks)
-                item_5.setTextAlignment(Qt.AlignCenter)
-                #item_6 = QStandardItem(user_script_item)
-                #item_6.setTextAlignment(Qt.AlignCenter)
+                user_script_item = QStandardItem()
+                if have_user_script:
+                    user_script_item.setIcon(self._dot_icon)
 
                 self._recent_list_model.insertRow(self._recent_list_model.rowCount(), [
-                    recent_session_file_item,
-                    item_1, item_2, item_3, item_4, item_5
+                    QStandardItem(recent_session_file),
+                    QStandardItem(exported_session['session']),
+                    QStandardItem(hooks),
+                    QStandardItem(watchers),
+                    QStandardItem(onLoads),
+                    QStandardItem(bookmarks),
+                    QStandardItem(user_script_item),
                 ])
             else:
                 invalid_session_files.append(recent_session_file)
@@ -382,29 +371,12 @@ class WelcomeDialog(QDialog):
         self.onSessionSelected.emit('Local')
         self.close()
 
+    def _on_remote_button(self):
+        self.onSessionSelected.emit('Remote')
+        self.close()
+
     def _pick_random_word(self, arr):
         return self._sub_titles[arr][random.randint(0, len(self._sub_titles[arr]) - 1)]
 
-    def _on_recent_sessions_context_menu(self, pos):
-        index = self.list_view.indexAt(pos).row()
-        glbl_pt = self.list_view.mapToGlobal(pos)
-        context_menu = QMenu(self)
-        if index != -1:
-            context_menu.addAction(
-                'Delete recent session', lambda: self._remove_recent_sessions(
-                    self._recent_list_model.item(index, 0).text()))
-        context_menu.exec_(glbl_pt)
-
-    def _remove_recent_session(self, session_file):
-        if os.path.exists(session_file):
-            os.remove(session_file)
-            session_history = self._prefs.get(prefs.RECENT_SESSIONS, default=[])
-            if session_file in session_history:
-                session_history.pop(session_history.index(session_file))
-                self._prefs.put(prefs.RECENT_SESSIONS, session_history)
-
-    def _on_recent_session_double_click(self, model_index):
-        row = self._recent_list_model.itemFromIndex(model_index).row()
-        recent_session_file = self._recent_list_model.item(row, 0)
-        recent_session_data = recent_session_file.data(Qt.UserRole + 2)
-        self.onSessionRestore.emit(recent_session_data)
+    def _on_recent_sessions_context_menu(self):
+        pass
