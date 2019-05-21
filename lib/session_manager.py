@@ -11,12 +11,11 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
-import json
-
 from PyQt5.QtCore import QObject, pyqtSignal
 
 from lib.android_session import AndroidSession
 from lib.local_session import LocalSession
+from lib.remote_session import RemoteSession
 
 
 class SessionRunningException(Exception):
@@ -34,9 +33,7 @@ class SessionManager(QObject):
     def __init__(self, parent=None):
         super(SessionManager, self).__init__(parent)
         self._app_window = parent
-
         self._session = None
-        self._restored_session_data = None
 
     # ************************************************************************
     # **************************** Properties ********************************
@@ -49,10 +46,8 @@ class SessionManager(QObject):
     # ************************************************************************
     # **************************** Functions *********************************
     # ************************************************************************
-    def create_session(self, session_type, session_data=None):
+    def create_session(self, session_type):
         session_type = session_type.join(session_type.split()).lower()
-        self._restored_session_data = session_data
-
         if self._session is not None:
             raise SessionRunningException('there is an active session')
         else:
@@ -60,6 +55,8 @@ class SessionManager(QObject):
                 self._session = AndroidSession(self._app_window)
             elif session_type == 'local':
                 self._session = LocalSession(self._app_window)
+            elif session_type == 'remote':
+                self._session = RemoteSession(self._app_window)
             else:
                 self._session = None
 
@@ -90,40 +87,3 @@ class SessionManager(QObject):
     def _session_finished(self):
         if self._session is not None:
             self.sessionStopped.emit()
-
-    def restore_session(self):
-        if self._restored_session_data is not None:
-            if 'hooks' in self._restored_session_data:
-                hooks = self._restored_session_data['hooks']
-
-                for hook_key in hooks:
-                    hook = hooks[hook_key]
-                    if hook_key.startswith('0x'):
-                        module = hook['debugSymbols']['moduleName']
-                        if module is not None and module != '':
-                            name = hook['debugSymbols']['name']
-                            add = 0
-                            ptr = 0
-                            if name.startswith('0x'):
-                                if '+' in name:
-                                    p = name.split('+')
-                                    name = int(p[0], 16)
-                                    add = int(p[1], 16)
-
-                                module = self._app_window.dwarf.dwarf_api('findModule', module)
-                                if module is not None:
-                                    module = json.loads(module)
-                                    ptr = int(module['base'], 16) + name + add
-                            else:
-                                if '+' in name:
-                                    p = name.split('+')
-                                    name = p[0]
-                                    add = int(p[1], 16)
-                                ptr = self._app_window.dwarf.dwarf_api('findExport', [name, module])
-                                if ptr is not None:
-                                    ptr = int(ptr, 16) + add
-
-                            if ptr is not None and ptr > 0:
-                                self._app_window.dwarf.dwarf_api('hookNative', ptr)
-
-        self._restored_session_data = None
