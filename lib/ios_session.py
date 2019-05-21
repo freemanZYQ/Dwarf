@@ -21,10 +21,10 @@ from ui.device_window import DeviceWindow
 from lib import utils
 
 
-class RemoteSession(Session):
+class IosSession(Session):
 
     def __init__(self, app_window):
-        super(RemoteSession, self).__init__(app_window)
+        super(IosSession, self).__init__(app_window)
 
         self._app_window = app_window
         self._device_window = DeviceWindow(self._app_window, 'usb')
@@ -37,14 +37,17 @@ class RemoteSession(Session):
     @property
     def session_ui_sections(self):
         # what sections we want in session_ui
+        return []
+        """
         return ['hooks', 'bookmarks', 'threads', 'registers', 'memory',
                 'console', 'watchers', 'backtrace', 'search', 'emulator']
+        """
 
     @property
     def session_type(self):
         """ return session name to show in menus etc
         """
-        return 'Remote'
+        return 'IOS'
 
     @property
     def main_menu(self):

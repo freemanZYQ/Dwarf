@@ -16,6 +16,7 @@ from PyQt5.QtCore import QObject, pyqtSignal
 from lib.android_session import AndroidSession
 from lib.local_session import LocalSession
 from lib.remote_session import RemoteSession
+from lib.ios_session import IosSession
 
 
 class SessionRunningException(Exception):
@@ -57,6 +58,8 @@ class SessionManager(QObject):
                 self._session = LocalSession(self._app_window)
             elif session_type == 'remote':
                 self._session = RemoteSession(self._app_window)
+            elif session_type == 'ios':
+                self._session = IosSession(self._app_window)
             else:
                 self._session = None
 
